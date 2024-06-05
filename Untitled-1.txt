@@ -1,0 +1,102 @@
+#include <Preferences.h>
+
+Preferences preferences;
+
+// Stocker une adresse IP (192.168.0.1) à l'adresse "my-ip"
+uint8_t ipAddress[4] = {192, 168, 0, 1};
+preferences.putBytes("my-ip", ipAddress, 4);
+
+// Lire l'adresse IP stockée à l'adresse "my-ip"
+uint8_t readIpAddress[4];
+preferences.getBytes("my-ip", readIpAddress, 4);
+
+// Afficher l'adresse IP lue
+Serial.print("Adresse IP lue : ");
+Serial.print(readIpAddress[0]);
+Serial.print(".");
+Serial.print(readIpAddress[1]);
+Serial.print(".");
+Serial.print(readIpAddress[2]);
+Serial.print(".");
+Serial.println(readIpAddress[3]);
+
+
+// autre chose:
+#include <Preferences.h>
+
+Preferences preferences;
+
+void setup() {
+  Serial.begin(9600);
+  preferences.begin("my-app", false); // initialize the preferences library
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n'); // read the incoming data until a newline character is received
+    input.trim(); // remove any whitespace characters from the beginning and end of the input string
+
+    // check if the input string is a valid IP address
+    IPAddress ip;
+    if (ip.fromString(input)) {
+      // convert the IP address to a byte array
+      uint8_t ipBytes[4];
+      ipBytes[0] = ip[0];
+      ipBytes[1] = ip[1];
+      ipBytes[2] = ip[2];
+      ipBytes[3] = ip[3];
+
+      // save the IP address to the preferences memory
+      preferences.putBytes("my-ip", ipBytes, 4);
+      Serial.println("IP address saved to preferences memory.");
+    } else {
+      Serial.println("Invalid IP address received.");
+    }
+  }
+}
+// ou encore (sous forme de byte input)
+// Déclaration des variables
+char buf[BUFFER_SIZE]; // tampon de réception série
+uint8_t ipAddress[4];  // adresse IP à extraire
+
+// Lecture des données série
+if (Serial.available() > 0) {
+  int received = Serial.readBytesUntil('\n', buf, BUFFER_SIZE);
+
+  // Recherche de la première occurrence d'un motif d'adresse IP
+  char *start = strstr(buf, "IP ");
+  if (start != NULL) {
+    // Si un motif est trouvé, on avance le pointeur de 3 caractères pour ignorer le texte "IP "
+    start += 3;
+
+    // Utilisation de sscanf pour extraire l'adresse IP sous forme de 4 entiers séparés
+    int result = sscanf(start, "%hhu.%hhu.%hhu.%hhu", &ipAddress[0], &ipAddress[1], &ipAddress[2], &ipAddress[3]);
+    if (result == 4) {
+      // Si l'extraction réussit, vous pouvez utiliser l'adresse IP stockée dans le tableau "ipAddress"
+      // pour écrire les préférences
+      preferences.putBytes("my-ip", ipAddress, 4);
+      Serial.print("Adresse IP enregistrée : ");
+      Serial.print(ipAddress[0]);
+      Serial.print(".");
+      Serial.print(ipAddress[1]);
+      Serial.print(".");
+      Serial.print(ipAddress[2]);
+      Serial.print(".");
+      Serial.println(ipAddress[3]);
+    }
+  }
+}
+
+
+
+
+// autre chose
+// Recherche de la première occurrence d'un motif d'adresse IP ou de la commande "ATT"
+char *start = strstr(buf, "IP ");
+if (start == NULL) {
+  start = strstr(buf, "ATT ");
+}
+
+if (start != NULL) {
+  // ... le reste du code pour extraire l'adresse IP ou gérer la commande "ATT"
+}
