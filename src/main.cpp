@@ -8,9 +8,7 @@
 #include <esp_system.h>     // pour commande de redemarrage à froid
 #include <WiFiClient.h>
 
-
 Preferences preferences;
-
 
 #define ETH_ADDR        0
 #define ETH_POWER_PIN   -1 // Do not use it, it can cause conflict during the software reset.
@@ -30,7 +28,6 @@ WiFiServer server; // Declare server objects
 
 #define RW_MODE false
 #define RO_MODE true
-
 
 const int BUFFER_SIZE = 50;
 char buf[BUFFER_SIZE];
@@ -90,28 +87,41 @@ void setup() {
       preferences.end();                             // ferme le namespace en mode RO mode et...
 
       preferences.begin("monIP", RW_MODE);        //  réouvre en mode RW.
-      ipAdress[0] = 0;
-      ipAdress[1] = 0;
-      ipAdress[2] = 0;
-      ipAdress[3] = 0;
-      preferences.putBytes("ipByte", ipAdress, 4);
+      ipAdress[0] = 0;ipAdress[1] = 0;ipAdress[2] = 0;ipAdress[3] = 0;  // IP
+      ipAdress[4] = 0;ipAdress[5] = 0;ipAdress[6] = 0;ipAdress[7] = 0;  // GATEWAY
+      ipAdress[8] = 0;ipAdress[9] = 0;ipAdress[10] = 0;ipAdress[11] = 0; // MASK
+      preferences.putBytes("ipByte", ipAdress, 12); //12 octets
   }
 
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE); // Enable ETH
-  preferences.getBytes("ipByte", ipAdress, 4);   // Lire l'adresse IP stockée à l'adresse "my-ip" dans la flash
+  preferences.getBytes("ipByte", ipAdress, 12);   // Lire l'adresse IP stockée à l'adresse "my-ip" dans la flash
   preferences.end();
 
   if (ipAdress[0] != 0){                 // si pas d'IP valide dans la flash, on affiche pas.
-    Serial.print("IP Address in flash : ");
-    Serial.print(ipAdress[0]);
-    Serial.print(".");
-    Serial.print(ipAdress[1]);
-    Serial.print(".");
-    Serial.print(ipAdress[2]);
-    Serial.print(".");
-    Serial.println(ipAdress[3]);
+    Serial.print("IP Address in flash: ");
+    for (int i = 0; i < 4; i++) {  // boucle pour afficher les 4 octets de l'adresse IP
+      Serial.print(ipAdress[i]);
+      if (i < 3) {  // ajoute un point après chaque octet, sauf le dernier
+        Serial.print(".");
+      }
+    }
+    Serial.print(" GateWay:");  
+    for (int i = 4; i < 8; i++) {  // boucle pour afficher les 4 octets du Gateway
+      Serial.print(ipAdress[i]);
+      if (i < 7) {  // ajoute un point après chaque octet, sauf le dernier
+        Serial.print(".");
+      }
+    }
+    Serial.print(" Mask:");  
+    for (int i = 8; i < 12; i++) {  // boucle pour afficher les 4 octets du Mask
+      Serial.print(ipAdress[i]);
+      if (i < 11) {  // ajoute un point après chaque octet, sauf le dernier
+        Serial.print(".");
+      }
+    }
+    Serial.println(" ");
+    
     ETH.config(IPAddress(ipAdress[0],ipAdress[1],ipAdress[2],ipAdress[3]), IPAddress(192, 168, 0, 254), IPAddress(255, 255, 255, 0));// + dns1 et 2 si necessaire
-    //ETH.config(IPAddress(ipAdress[0],ipAdress[1],ipAdress[2],ipAdress[3]), IPAddress(192, 168, 0, 254), IPAddress(255, 255, 255, 0), IPAddress(192, 168, 0, 2), IPAddress(192, 168, 0, 1));
     Serial.print("Using static IP ");
     Serial.println(ETH.localIP());
   }
